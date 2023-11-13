@@ -1,0 +1,29 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = "mysql://huzaifa:abc123@127.0.0.1:3306/medicine_store"
+}
+
+model MedicineDetails {
+  id          Int       @id @default(autoincrement())
+  reg_no      String?   // Change the data type if needed
+  brand_name  String?
+  company_name String?
+  formulation  String?
+  dosage_form String?
+  pack_size   String?
+  mrp         Decimal? // Map to the 'mrp' column in the database
+  remarks     String?
+  efficacy    String?
+  is_public   Boolean?  @map("is_public") // Map to the 'is_public' column in the database
+  created_at  DateTime? @default(now())
+  updated_at  DateTime? @updatedAt
+
+@@map("medicine_details")
+}
