@@ -7,7 +7,7 @@ import textract from '../helpers/Extrator';
 
 const prisma = new PrismaClient()
 const router = express.Router();
-const upload = multer({ dest: 'src/uploads/',storage:multer.memoryStorage()})
+const upload = multer({ dest: 'uploads/',storage:multer.memoryStorage()})
 
 router.get('/find-by', async (req: Request, res: Response) => {
   const searchCriteria = req.query.searchCriteria;
@@ -33,10 +33,10 @@ router.get('/find-by', async (req: Request, res: Response) => {
     },
   });
 
-  res.send(medicines);
+  res.send({data:medicines,search:searchQuery});
 });
 
-router.post('/prescription', upload.single('image'),async(req: Request, res: Response) => {
+router.post('/upload-prescription', upload.single('image'),async(req: Request, res: Response) => {
   if (!req.file) {
     return res.status(400).send('No file uploaded.');
   }
@@ -59,5 +59,34 @@ router.post('/prescription', upload.single('image'),async(req: Request, res: Res
     }
   });
 });
+
+
+router.post('/search-prescription', async (req: Request, res: Response) => {
+  try {
+      const brandNames: string[] = req.body.brandNames;
+
+      if (!brandNames || brandNames.length === 0) {
+          return res.status(400).json({ message: 'No brand names provided' });
+      }
+
+      const searchResults = await Promise.all(
+          brandNames.map(async (brandName) => {
+              const result = await prisma.medicineDetails.findMany({
+                where: {
+                  brand_name: {
+                      contains: brandName,
+                  },
+              },
+              });
+              return { brandName, brands: result };
+          })
+      );
+
+      res.json(searchResults);
+  } catch (error) {
+      res.status(500).json({ message: 'Error searching for medicines', error });
+  }
+});
+
 
 export default router
