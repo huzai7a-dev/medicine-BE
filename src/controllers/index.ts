@@ -22,6 +22,7 @@ const getFindBy = async (req: Request, res: Response) => {
             },
         },
         select: {
+            id:true,
             brand_name: true,
             company_name: true,
             dosage_form: true,
@@ -100,6 +101,7 @@ const searchBrandList = async (brandNames: string[]) => {
                     },
                 },
                 select: {
+                    id:true,
                     brand_name: true,
                     company_name: true,
                     dosage_form: true,
