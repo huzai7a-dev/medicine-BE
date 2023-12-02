@@ -2,6 +2,10 @@ import express from 'express';
 import routes from './routes';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import { PrismaClient } from '@prisma/client';
+const prisma = new PrismaClient()
+
+prisma.$connect().then(()=> console.log('connected to database')).catch((err)=> console.log(`could not connect to db ${err}`));
 
 dotenv.config();
 const app = express();
