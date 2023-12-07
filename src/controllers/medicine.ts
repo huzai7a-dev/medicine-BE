@@ -1,12 +1,15 @@
 import { PrismaClient } from "@prisma/client";
 import { Request, Response } from "express";
 import textract from "../libs/extrator";
+import { paginate } from "../libs/utils";
 
 const prisma = new PrismaClient();
 
 const getFindBy = async (req: Request, res: Response) => {
-    const searchCriteria = req.query.searchCriteria;
-    const searchQuery = req.query.searchQuery;
+    const searchCriteria = req.body.searchCriteria;
+    const searchQuery = req.body.searchQuery;
+    const page = Number(req.query.page) || 1;
+    const pageSize = Number(req.query.pageSize) || 50;
 
     if (
         !["company_name", "brand_name", "formulation"].includes(
@@ -15,6 +18,12 @@ const getFindBy = async (req: Request, res: Response) => {
     ) {
         return res.status(400).json({ error: "Invalid searchCriteria" });
     }
+
+    if(!searchQuery) return res.status(400).send({error:'searchQuery is required'});
+
+    const totalCount = await prisma.medicineDetails.count();
+    const pagination = paginate(totalCount,page,pageSize);
+
     const medicines = await prisma.medicineDetails.findMany({
         where: {
             [searchCriteria as unknown as string]: {
@@ -31,9 +40,11 @@ const getFindBy = async (req: Request, res: Response) => {
             pack_size: true,
             reg_no: true,
         },
+        skip: (page - 1) * pageSize, // Calculate number of records to skip
+        take: pageSize, // Number of records to fetch
     });
 
-    res.send({ data: medicines, search: searchQuery });
+    res.send({ data: medicines, search: searchQuery,pagination });
 };
 
 const uploadPrescription = async (req: Request, res: Response) => {
@@ -115,5 +126,47 @@ const searchBrandList = async (brandNames: string[]) => {
         })
     );
     return searchResults
+};
+
+const getAllMedicines = async(req:Request, res:Response) => {
+    const page = Number(req.query.page) || 1;
+    const pageSize = Number(req.query.pageSize) || 50;
+
+    try {
+        // Get total number of records
+        const totalCount = await prisma.medicineDetails.count();
+        const pagination = paginate(totalCount,page,pageSize);
+        // Get paginated records
+        const medicines = await prisma.medicineDetails.findMany({
+            skip: (page - 1) * pageSize, // Calculate number of records to skip
+            take: pageSize, // Number of records to fetch
+            select: {
+                id: true,
+                brand_name: true,
+                company_name: true,
+                dosage_form: true,
+                formulation: true,
+                mrp: true,
+                efficacy: true,
+                pack_size: true,
+                reg_no: true,
+            }
+        });
+
+        // Calculate total pages
+        const totalPages = Math.ceil(totalCount / pageSize);
+
+        // Check if there are more records
+        const hasMore = page < totalPages;
+
+        // Send response
+        return res.status(200).send({
+            data: medicines,
+            pagination
+        });
+    } catch (error: any) {
+        res.status(500).send('Server error');
+    }
 }
-export { getFindBy, uploadPrescription, searchPrescription };
+
+export { getFindBy, uploadPrescription, searchPrescription,getAllMedicines };
