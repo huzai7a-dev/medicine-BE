@@ -1,5 +1,5 @@
 import express from 'express';
-import routes from './routes';
+import routes from './routes/medicine';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { PrismaClient } from '@prisma/client';
@@ -19,4 +19,3 @@ const port = process.env.PORT || 4000
 app.listen(port, () => {
     console.log(`app is listening to port ${port}`);
 });
-
