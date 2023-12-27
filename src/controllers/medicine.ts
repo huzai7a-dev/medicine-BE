@@ -27,6 +27,8 @@ const getFindBy = async (req: Request, res: Response) => {
         contains: searchQuery,
       },
       dosage_form: dosageForm,
+      is_public: true,
+      // efficacy:true, to do when db updated
     },
     select: {
       id: true,
@@ -92,9 +94,10 @@ const searchPrescription = async (req: Request, res: Response) => {
     }
 
     const searchResults = await searchBrandFormulations(brandNames);
-    res.json(searchResults);
+    res.send(searchResults);
   } catch (error) {
-    res.status(500).json({ message: "Error searching for medicines", error });
+    console.log(error);
+    res.status(500).send({ message: "Error searching for medicines", error });
   }
 };
 
@@ -162,6 +165,7 @@ const searchBrandFormulations = async (brandNames: string[]) => {
         const brands = await prisma.medicineDetails.findMany({
           where: {
             formulation: formulation,
+            is_public: true,
           },
           select: {
             id: true,
