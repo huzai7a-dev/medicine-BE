@@ -11,7 +11,7 @@ const getFindBy = async (req: Request, res: Response) => {
   const dosageForm: string = req.body.dosageForm;
 
   if (
-    !["company_name", "brand_name", "formulation"].includes(
+    !["company_name", "brand_name", "formula"].includes(
       searchCriteria as unknown as string
     )
   ) {
@@ -40,8 +40,6 @@ const getFindBy = async (req: Request, res: Response) => {
       pack_size: true,
       reg_no: true,
     },
-    // skip: (page - 1) * pageSize, // Calculate number of records to skip
-    // take: pageSize, // Number of records to fetch
   });
 
   res.send({ data: medicines, search: searchQuery });

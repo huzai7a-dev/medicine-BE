@@ -5,32 +5,32 @@ import { paginate } from "../libs/utils";
 const prisma = new PrismaClient();
 
 const getFullMedicines = async (req: Request, res: Response) => {
-  const brandName = req.query.brandName || undefined;
-  const companyName = req.query.companyName || undefined;
-  const formulaName = req.query.formula || undefined;
-  const isPublic = req.query.deleted === "true" ? false : undefined;
+  const isPublic = req.query.deleted === "true" ? false : true;
+  const findBy = req.query.findBy;
+  const value = req.query.value;
+
   const page = Number(req.query.page) || 1;
   const pageSize = Number(req.query.pageSize) || 50;
 
-  let queryConditions: any = {};
-
-  if (req.query.brandName) {
-    queryConditions.brand_name = brandName;
-  }
-  if (req.query.companyName) {
-    queryConditions.company_name = companyName;
-  }
-  if (req.query.formula) {
-    queryConditions.formula = formulaName;
-  }
-  if (req.query.deleted === "true") {
-    queryConditions.is_public = isPublic;
+  let searchQuery = {
+    is_public: isPublic,
+  };
+  if (findBy) {
+    const findObj = {
+      ...searchQuery,
+      [findBy as unknown as string]: {
+        contains: value,
+      },
+    };
+    searchQuery = findObj;
   }
   try {
     const totalCount = await prisma.medicineDetails.count();
     const pagination = paginate(totalCount, page, pageSize);
     const medicines = await prisma.medicineDetails.findMany({
-      where: queryConditions,
+      skip: page - 1,
+      take: pageSize,
+      where: searchQuery,
     });
 
     res.send({
@@ -38,6 +38,7 @@ const getFullMedicines = async (req: Request, res: Response) => {
       pagination,
     });
   } catch (error) {
+    console.log(error);
     res.status(500).send({ error: "Server Error" });
   }
 };

@@ -81,6 +81,10 @@ const login = async (req: Request, res: Response) => {
   const token = getToken(jwtPayload);
   return res
     .status(200)
-    .send({ access_token: token, message: "Login successful" });
+    .send({
+      access_token: token,
+      message: "Login successful",
+      data: jwtPayload,
+    });
 };
 export { signUp, login };
