@@ -36,6 +36,7 @@ const getFindBy = async (req: Request, res: Response) => {
       company_name: true,
       dosage_form: true,
       formula: true,
+      milligrams: true,
       mrp: true,
       pack_size: true,
       reg_no: true,
