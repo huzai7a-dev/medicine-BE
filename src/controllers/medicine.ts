@@ -110,8 +110,9 @@ const getAllMedicines = async (req: Request, res: Response) => {
     const pagination = paginate(totalCount, page, pageSize);
     // Get paginated records
     const medicines = await prisma.medicineDetails.findMany({
-      skip: (page - 1) * pageSize, // Calculate number of records to skip
-      take: pageSize, // Number of records to fetch
+      where: { is_public: true },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
       select: {
         id: true,
         brand_name: true,
@@ -146,12 +147,12 @@ const searchBrandFormulations = async (brandNames: string[]) => {
           brand_name: {
             contains: brandName,
           },
+          is_public: true,
         },
         select: {
           formula: true,
         },
       });
-
       const uniqueFormulations = [
         ...new Set(formulations.map((f) => f.formula)),
       ];
@@ -160,10 +161,10 @@ const searchBrandFormulations = async (brandNames: string[]) => {
       let brandsWithFormulation: any[] = [];
 
       // For each formulation, find all brands that have this formulation
-      for (let formulation of uniqueFormulations) {
+      for (let formula of uniqueFormulations) {
         const brands = await prisma.medicineDetails.findMany({
           where: {
-            formulation: formulation,
+            formula: formula,
             is_public: true,
           },
           select: {

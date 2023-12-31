@@ -15,7 +15,7 @@ router.get(
   getFullMedicines
 );
 
-router.post("/medicine/:id", [authMiddleware, isPharmacist], updateMedicine);
+router.put("/medicine/:id", [authMiddleware, isPharmacist], updateMedicine);
 router.delete("/medicine/:id", [authMiddleware, isPharmacist], deleteMedicine);
 
 export default router;

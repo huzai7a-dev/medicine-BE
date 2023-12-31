@@ -45,10 +45,10 @@ const getFullMedicines = async (req: Request, res: Response) => {
 
 const updateMedicine = async (req: Request, res: Response) => {
   const id = Number(req.params.id);
-  const { remarks, milligrams, mrp } = req.body;
-
-  if (!remarks || !milligrams || !mrp)
-    return res.status(400).send({ message: "Bas request" });
+  const { remarks, milligrams, mrp, efficacy } = req.body;
+  console.log(req.body);
+  if (!remarks && !milligrams && !mrp && !efficacy)
+    return res.status(400).send({ message: "Bad request" });
 
   const updatedMedicine = await prisma.medicineDetails.update({
     where: { id },
@@ -56,6 +56,7 @@ const updateMedicine = async (req: Request, res: Response) => {
       remarks,
       milligrams,
       mrp,
+      efficacy,
     },
   });
 
