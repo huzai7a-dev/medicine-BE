@@ -3,6 +3,11 @@ import { Request, Response } from "express";
 import textract from "../libs/extrator";
 import { paginate } from "../libs/utils";
 
+interface PrescriptionDto {
+  brandName: string;
+  dosageForm?: string;
+}
+
 const prisma = new PrismaClient();
 
 const getFindBy = async (req: Request, res: Response) => {
@@ -62,13 +67,12 @@ const uploadPrescription = async (req: Request, res: Response) => {
       console.error("Error:", err);
       return res.status(500).send(err);
     } else {
-      const extractedText: string[] = [];
+      const extractedText: { brandName: string }[] = [];
 
       if (data.Blocks) {
         data.Blocks.forEach((block) => {
           if (block.BlockType === "LINE" && block.Text) {
-            console.log(block.Text);
-            extractedText.push(block.Text);
+            extractedText.push({ brandName: block.Text });
           }
         });
       }
@@ -86,13 +90,13 @@ const uploadPrescription = async (req: Request, res: Response) => {
 
 const searchPrescription = async (req: Request, res: Response) => {
   try {
-    const brandNames: string[] = req.body.brandNames;
+    const searchQuery = req.body.searchQuery as PrescriptionDto[];
 
-    if (!brandNames || brandNames.length === 0) {
+    if (!searchQuery || searchQuery.length === 0) {
       return res.status(400).json({ message: "No brand names provided" });
     }
 
-    const searchResults = await searchBrandFormulations(brandNames);
+    const searchResults = await searchBrandFormulations(searchQuery);
     res.send(searchResults);
   } catch (error) {
     console.log(error);
@@ -138,17 +142,27 @@ const getAllMedicines = async (req: Request, res: Response) => {
   }
 };
 
-const searchBrandFormulations = async (brandNames: string[]) => {
+const searchBrandFormulations = async (searchQuery: PrescriptionDto[]) => {
   const searchResults = await Promise.all(
-    brandNames.map(async (brandName) => {
+    searchQuery.map(async ({ brandName, dosageForm }) => {
       // Find all unique formulations for this brand name
-      const formulations = await prisma.medicineDetails.findMany({
-        where: {
-          brand_name: {
-            contains: brandName,
-          },
-          is_public: true,
+      let selectQuery = {
+        brand_name: {
+          contains: brandName,
         },
+        is_public: true,
+      };
+
+      if (dosageForm) {
+        const queryWithDosageForm = {
+          ...selectQuery,
+          dosage_form: dosageForm,
+        };
+        selectQuery = queryWithDosageForm;
+      }
+
+      const formulations = await prisma.medicineDetails.findMany({
+        where: selectQuery,
         select: {
           formula: true,
         },
@@ -166,6 +180,7 @@ const searchBrandFormulations = async (brandNames: string[]) => {
           where: {
             formula: formula,
             is_public: true,
+            dosage_form: dosageForm,
           },
           select: {
             id: true,
