@@ -131,10 +131,18 @@ const getAllMedicines = async (req: Request, res: Response) => {
       },
     });
 
-    // Send response
+    const milligramsList = [
+      ...new Set(
+        medicines.map((item) =>
+          item.milligrams?.split(" ").join("").replace(",", "")
+        )
+      ),
+    ];
+
     return res.status(200).send({
       data: medicines,
       pagination,
+      milligramsList,
     });
   } catch (error: any) {
     console.log(error);
