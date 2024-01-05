@@ -48,7 +48,14 @@ const getFindBy = async (req: Request, res: Response) => {
     },
   });
 
-  res.send({ data: medicines, search: searchQuery });
+  const milligramsList = [
+    ...new Set(
+      medicines.map((item) =>
+        item.milligrams?.split(" ").join("").replace(",", "")
+      )
+    ),
+  ];
+  res.send({ data: medicines, search: searchQuery, milligramsList });
 };
 
 const uploadPrescription = async (req: Request, res: Response) => {
