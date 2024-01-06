@@ -33,7 +33,7 @@ const getFindBy = async (req: Request, res: Response) => {
       },
       dosage_form: dosageForm,
       is_public: true,
-      // efficacy:true, to do when db updated
+      efficacy: { not: null },
     },
     select: {
       id: true,
@@ -45,6 +45,7 @@ const getFindBy = async (req: Request, res: Response) => {
       mrp: true,
       pack_size: true,
       reg_no: true,
+      efficacy: true,
     },
   });
 
@@ -121,7 +122,7 @@ const getAllMedicines = async (req: Request, res: Response) => {
     const pagination = paginate(totalCount, page, pageSize);
     // Get paginated records
     const medicines = await prisma.medicineDetails.findMany({
-      where: { is_public: true },
+      where: { is_public: true, efficacy: { not: null } },
       skip: (page - 1) * pageSize,
       take: pageSize,
       select: {
@@ -135,6 +136,7 @@ const getAllMedicines = async (req: Request, res: Response) => {
         remarks: true,
         pack_size: true,
         reg_no: true,
+        efficacy: true,
       },
     });
 
@@ -166,6 +168,7 @@ const searchBrandFormulations = async (searchQuery: PrescriptionDto[]) => {
           contains: brandName,
         },
         is_public: true,
+        efficacy: { not: null },
       };
 
       if (dosageForm) {
@@ -195,6 +198,7 @@ const searchBrandFormulations = async (searchQuery: PrescriptionDto[]) => {
           where: {
             formula: formula,
             is_public: true,
+            efficacy: { not: null },
             dosage_form: dosageForm,
           },
           select: {
@@ -207,6 +211,7 @@ const searchBrandFormulations = async (searchQuery: PrescriptionDto[]) => {
             mrp: true,
             pack_size: true,
             reg_no: true,
+            efficacy: true,
           },
         });
 
