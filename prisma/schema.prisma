@@ -14,18 +14,18 @@ model MedicineDetails {
   id           BigInt    @id @default(autoincrement())
   brand_name   String?
   company_name String?
-  created_at   DateTime?
+  created_at   DateTime? @db.DateTime(6)
   dosage_form  String?
-  formula      String?
-  formulation  String?
-  efficacy     String?
-  is_public    Boolean   @default(false)
-  milligrams   String?
-  mrp          Decimal?
+  formula      String?   @db.VarChar(255)
+  formulation  String?   @db.Text
+  is_public    Boolean   @default(false) @db.Bit(1)
+  milligrams   String?   @db.VarChar(255)
+  mrp          Decimal?  @db.Decimal(19, 2)
+  efficacy     String?   @db.VarChar(255)
   pack_size    String?
   reg_no       String?
-  remarks      String?
-  updated_at   DateTime?
+  remarks      String?   @db.VarChar(255)
+  updated_at   DateTime? @db.DateTime(6)
   updated_by   String?
 
   @@map("medicine_details")
@@ -33,16 +33,28 @@ model MedicineDetails {
 
 model User {
   id         BigInt    @id @default(autoincrement())
-  name       String?
-  username   String?   @unique()
-  password   String?
-  type       String?
-  mobile_no  String?
-  address    String?
-  details    String?
-  is_public  Boolean   @default(false)
-  created_at DateTime? @default(now())
-  updated_at DateTime?
+  address    String?   @db.VarChar(255)
+  created_at DateTime? @db.DateTime(6)
+  details    String?   @db.VarChar(255)
+  is_public  Boolean   @default(false) @db.Bit(1)
+  mobile_no  String?   @db.VarChar(255)
+  name       String?   @db.VarChar(255)
+  password   String?   @db.VarChar(255)
+  type       String?   @db.VarChar(255)
+  updated_at DateTime? @db.DateTime(6)
+  username   String?   @unique() @db.VarChar(255)
 
   @@map("user")
+}
+
+model Review {
+  id         BigInt    @id @default(autoincrement())
+  user_id    BigInt?
+  reg_no     String?   @db.VarChar(255)
+  comments   String?   @db.Text
+  created_at DateTime?
+  is_public  Boolean   @default(false) @db.Bit(1)
+  rating     String?   @db.VarChar(255)
+
+  @@map("reviews")
 }

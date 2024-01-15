@@ -26,37 +26,78 @@ const getFindBy = async (req: Request, res: Response) => {
   if (!searchQuery)
     return res.status(400).send({ error: "searchQuery is required" });
 
-  const medicines = await prisma.medicineDetails.findMany({
-    where: {
-      [searchCriteria as unknown as string]: {
-        contains: searchQuery,
-      },
-      dosage_form: dosageForm,
-      is_public: true,
-      efficacy: { not: null },
-    },
-    select: {
-      id: true,
-      brand_name: true,
-      company_name: true,
-      dosage_form: true,
-      formula: true,
-      milligrams: true,
-      mrp: true,
-      pack_size: true,
-      reg_no: true,
-      efficacy: true,
-    },
-  });
+  if (dosageForm !== "tablet" && dosageForm !== "capsule") {
+    return res.status(400).send("Invalid dosage form");
+  }
 
-  const milligramsList = [
-    ...new Set(
-      medicines.map((item) =>
-        item.milligrams?.split(" ").join("").replace(",", "")
-      )
-    ),
-  ];
-  res.send({ data: medicines, search: searchQuery, milligramsList });
+  try {
+    const medicines = await prisma.medicineDetails.findMany({
+      where: {
+        [searchCriteria as unknown as string]: {
+          contains: searchQuery,
+        },
+        dosage_form: dosageForm,
+        is_public: true,
+        efficacy: { not: null },
+      },
+      select: {
+        id: true,
+        brand_name: true,
+        company_name: true,
+        dosage_form: true,
+        formula: true,
+        milligrams: true,
+        mrp: true,
+        pack_size: true,
+        reg_no: true,
+        efficacy: true,
+      },
+    });
+
+    if (medicines.length < 1) {
+      let otherDosageForm: typeof dosageForm | "" = "";
+      if (dosageForm === "capsule") otherDosageForm = "tablet";
+      if (dosageForm === "tablet") otherDosageForm = "capsule";
+
+      const suggestedMedicine = await prisma.medicineDetails.findMany({
+        where: {
+          [searchCriteria as unknown as string]: {
+            contains: searchQuery,
+          },
+          dosage_form: otherDosageForm,
+          is_public: true,
+          efficacy: { not: null },
+        },
+        select: {
+          dosage_form: true,
+        },
+      });
+
+      if (suggestedMedicine.length < 1)
+        return res.send({ data: [], search: searchQuery, milligramsList: [] });
+      res.send({
+        data: [],
+        search: searchQuery,
+        suggest: {
+          findBy: searchCriteria,
+          hasSuggestedMedicine: true,
+          dosageForm: otherDosageForm,
+        },
+      });
+    } else {
+      const milligramsList = [
+        ...new Set(
+          medicines.map((item) =>
+            item.milligrams?.split(" ").join("").replace(",", "")
+          )
+        ),
+      ];
+      res.send({ data: medicines, search: searchQuery, milligramsList });
+    }
+  } catch (error) {
+    res.status(500).send("Server Error");
+    console.log(error);
+  }
 };
 
 const uploadPrescription = async (req: Request, res: Response) => {

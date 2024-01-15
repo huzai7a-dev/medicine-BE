@@ -13,7 +13,6 @@ const signUp = async (req: Request, res: Response) => {
     const usernameExist = await prisma.user.findUnique({
       where: { username: username },
     });
-    console.log(usernameExist, "user exist");
     if (usernameExist) return res.status(409).send("User name already taken");
 
     signupSchema.parse(req.body);
@@ -79,12 +78,10 @@ const login = async (req: Request, res: Response) => {
     details: user.details,
   };
   const token = getToken(jwtPayload);
-  return res
-    .status(200)
-    .send({
-      access_token: token,
-      message: "Login successful",
-      data: jwtPayload,
-    });
+  return res.status(200).send({
+    access_token: token,
+    message: "Login successful",
+    data: jwtPayload,
+  });
 };
 export { signUp, login };
