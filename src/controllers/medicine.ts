@@ -5,7 +5,7 @@ import { paginate } from "../libs/utils";
 
 interface PrescriptionDto {
   brandName: string;
-  dosageForm?: string;
+  dosageForm?: "tablet" | "capsule";
 }
 
 const prisma = new PrismaClient();
@@ -203,7 +203,6 @@ const getAllMedicines = async (req: Request, res: Response) => {
 const searchBrandFormulations = async (searchQuery: PrescriptionDto[]) => {
   const searchResults = await Promise.all(
     searchQuery.map(async ({ brandName, dosageForm }) => {
-      // Find all unique formulations for this brand name
       let selectQuery = {
         brand_name: {
           contains: brandName,
@@ -219,50 +218,79 @@ const searchBrandFormulations = async (searchQuery: PrescriptionDto[]) => {
         };
         selectQuery = queryWithDosageForm;
       }
-
-      const formulations = await prisma.medicineDetails.findMany({
-        where: selectQuery,
-        select: {
-          formula: true,
-        },
-      });
-      const uniqueFormulations = [
-        ...new Set(formulations.map((f) => f.formula)),
-      ];
-
-      // Create an array to hold all the brands for each formulation
-      let brandsWithFormulation: any[] = [];
-
-      // For each formulation, find all brands that have this formulation
-      for (let formula of uniqueFormulations) {
-        const brands = await prisma.medicineDetails.findMany({
-          where: {
-            formula: formula,
-            is_public: true,
-            efficacy: { not: null },
-            dosage_form: dosageForm,
-          },
-          select: {
-            id: true,
-            brand_name: true,
-            company_name: true,
-            dosage_form: true,
-            formula: true,
-            milligrams: true,
-            mrp: true,
-            pack_size: true,
-            reg_no: true,
-            efficacy: true,
-          },
-        });
-
-        // Add the brands to the array
-        brandsWithFormulation = brandsWithFormulation.concat(brands);
+      const brandsWithFormulation = await getBrandsWithFormulation(
+        selectQuery,
+        dosageForm
+      );
+      if (brandsWithFormulation.length === 0) {
+        const alternateDosageForm: typeof dosageForm =
+          dosageForm === "capsule" ? "tablet" : "capsule";
+        const queryWithAlternate = {
+          ...selectQuery,
+          dosage_form: alternateDosageForm,
+        };
+        const alternateResult = await getBrandsWithFormulation(
+          queryWithAlternate,
+          queryWithAlternate.dosage_form
+        );
+        if (alternateResult.length > 0) {
+          return {
+            brandName,
+            brands: [],
+            suggestedResult: {
+              brand: queryWithAlternate.brand_name.contains,
+              dosageForm: queryWithAlternate.dosage_form,
+            },
+          };
+        }
       }
-
       return { brandName, brands: brandsWithFormulation };
     })
   );
   return searchResults;
 };
+
+const getBrandsWithFormulation = async (
+  selectQuery: any,
+  dosageForm?: string
+) => {
+  const formulations = await prisma.medicineDetails.findMany({
+    where: selectQuery,
+    select: {
+      formula: true,
+    },
+  });
+  const uniqueFormulations = [...new Set(formulations.map((f) => f.formula))];
+
+  // Create an array to hold all the brands for each formulation
+  let brandsWithFormulation: any[] = [];
+
+  // For each formulation, find all brands that have this formulation
+  for (let formula of uniqueFormulations) {
+    const brands = await prisma.medicineDetails.findMany({
+      where: {
+        formula: formula,
+        is_public: true,
+        efficacy: { not: null },
+        dosage_form: dosageForm,
+      },
+      select: {
+        id: true,
+        brand_name: true,
+        company_name: true,
+        dosage_form: true,
+        formula: true,
+        milligrams: true,
+        mrp: true,
+        pack_size: true,
+        reg_no: true,
+        efficacy: true,
+      },
+    });
+
+    brandsWithFormulation = brandsWithFormulation.concat(brands);
+  }
+  return brandsWithFormulation;
+};
+
 export { getFindBy, uploadPrescription, searchPrescription, getAllMedicines };
