@@ -244,7 +244,14 @@ const searchBrandFormulations = async (searchQuery: PrescriptionDto[]) => {
           };
         }
       }
-      return { brandName, brands: brandsWithFormulation };
+      const milligramsList = [
+        ...new Set(
+          brandsWithFormulation.map((item) =>
+            item.milligrams?.split(" ").join("").replace(",", "")
+          )
+        ),
+      ];
+      return { brandName, brands: brandsWithFormulation,milligramsList };
     })
   );
   return searchResults;

@@ -47,7 +47,7 @@ const getFullMedicines = async (req: Request, res: Response): Promise<void> => {
       // Extract distinct dosage forms from the paginated data
       const milligramsList = [
         ...new Set(
-          medicines.map((item) => item.milligrams?.split(" ").join(""))
+          medicines.map((item) => item.milligrams?.split(" ").join("").replace(",", ""))
         ),
       ];
 
@@ -63,7 +63,7 @@ const getFullMedicines = async (req: Request, res: Response): Promise<void> => {
 
       // Since there's no pagination, we return all distinct dosage forms from the filtered data
       const milligramsList = [
-        ...new Set(medicines.map((item) => item.milligrams?.split(" ").join())),
+        ...new Set(medicines.map((item) => item.milligrams?.split(" ").join("").replace(",", ""))),
       ];
 
       res.send({
@@ -83,7 +83,7 @@ export default getFullMedicines;
 
 const updateMedicine = async (req: Request, res: Response) => {
   const id = Number(req.params.id);
-  const { remarks, milligrams, mrp, efficacy } = req.body;
+  const { remarks, milligrams, mrp, efficacy,is_public } = req.body;
   if (!remarks && !milligrams && !mrp && !efficacy)
     return res.status(400).send({ message: "Bad request" });
 
@@ -94,6 +94,7 @@ const updateMedicine = async (req: Request, res: Response) => {
       milligrams,
       mrp,
       efficacy,
+      is_public
     },
   });
 
